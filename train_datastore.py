@@ -23,6 +23,7 @@ parser.add_argument('--num_keys_to_add_at_a_time', default=1000000, type=int,
 parser.add_argument('--starting_point', type=int, default=0, help='index to start adding keys at')
 parser.add_argument('--use_gpu', default=False, action='store_true')
 parser.add_argument("--pca", default=0, type=int)
+parser.add_argument("--index", default="IVF4096,PQ64", type=str)
 
 
 args = parser.parse_args()
@@ -56,28 +57,41 @@ assert madvise(keys.ctypes.data, keys.size * keys.dtype.itemsize, 1) == 0, "MADV
 if not os.path.exists(args.faiss_index + ".trained"):
 
     index_dim = args.pca if args.pca > 0 else args.dimension
+    index_string=args.index
     # Initialize faiss index
+    #old code experimented by He
+    """
     quantizer = faiss.IndexFlatL2(index_dim)
     index = faiss.IndexIVFPQ(quantizer, index_dim, args.ncentroids, args.code_size, 8)
     index.nprobe = args.probe
-
+    """ 
+    #Our proposed index method
+    index=faiss.index_factory(index_dim,index_string)
+    ivf = faiss.extract_index_ivf(index)
+    ivf.nprobe =32
+    
+    if args.pca > 0:
+        pca_matrix = faiss.PCAMatrix(args.dimension, args.pca, 0, True)
+        #pca_matrix = faiss.PCAMatrix(args.dimension, 1024, 0, True)
+        index = faiss.IndexPreTransform(pca_matrix, index)
+    
     if args.use_gpu:
         print('Start put index to gpu')
         co = faiss.GpuClonerOptions()
         co.useFloat16 = True
         gpu_index = faiss.index_cpu_to_gpu(res, 0, index, co)
-
-    if args.pca > 0:
-        pca_matrix = faiss.PCAMatrix(args.dimension, args.pca, 0, True)
-        index = faiss.IndexPreTransform(pca_matrix, index)
-
+   
     print('Training Index')
     np.random.seed(args.seed)
     random_sample = np.random.choice(np.arange(vals.shape[0]), size=[min(1000000, vals.shape[0])],replace=False)
+     # ensure sequential reading
+    random_sample.sort()
+    
     start = time.time()
 
     if args.use_gpu:
         gpu_index.train(keys[random_sample].astype(np.float32))
+       
     else:
         index.train(keys[random_sample].astype(np.float32))
 
