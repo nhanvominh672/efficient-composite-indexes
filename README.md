@@ -1,4 +1,4 @@
-# EXPLORING COMPOSITE INDEXES FOR DOMAIN ADAPTATION IN MACHINE TRANSLATION 
+# EXPLORING COMPOSITE INDEXES FOR DOMAIN ADAPTATION IN NEURAL MACHINE TRANSLATION 
 Implementation of the Efficient kNN-MT model.
 The implementation is built upon [fairseq](https://github.com/pytorch/fairseq) and inspired on the [Adaptive kNN-MT](https://github.com/zhengxxn/adaptive-knn-mt) implementation.
 
