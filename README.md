@@ -42,6 +42,7 @@ python create_datastore.py <path/to/domain/dir>/data-bin/ --dataset-impl mmap --
 
 ### Train datastore
 To train the datastore run: (If not using PCA to reduce keys size, change to --PCA=0)
+To change composite index method, change to --index "IVF4096_HNSW64,PQ64" for IVFPQ+HNSW for example
 ```
 python3 train_datastore.py --dstore_mmap <path/to/datastore> --dstore_size <size of datastore> --faiss_index <path/to/save/faiss/index> --pca <PCA output dimension>
 ```
